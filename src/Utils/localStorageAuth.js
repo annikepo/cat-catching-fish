@@ -49,3 +49,20 @@ export const getCurrentUser = () => {
 export const logOut = () => {
     localStorage.removeItem(CURRENT_USER_KEY);
 };
+
+/* Save new high score for the logged-in user */
+export const updateUserHighScore = (username, newScore) => {
+    const users = getUsers();
+    const user = users[username];
+    if (!user) return null;
+
+    const currentBest = user.highScore || 0;
+    if (newScore > currentBest) {
+        user.highScore = newScore;
+        users[username] = user;
+        localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+    }
+
+    return user;
+};
