@@ -57,6 +57,10 @@ function App() {
     setFishCaught((prev) => prev + 1);
   }, []);
 
+  const handleDeductPoints = useCallback((penalty) => {
+    setScore((prev) => Math.max(0, prev - penalty));
+  }, []);
+
   function handleStartGame() {
     setScore(0);
     setLives(3);
@@ -66,6 +70,14 @@ function App() {
     // Brief tick resets canvas items before switching to "playing"
     setTimeout(() => setGameState("playing"), 0);
   }
+
+  function handleFinishGame() {
+    setGameState("gameover");
+    if (user) {
+      const updatedUser = updateUserHighScore(user.username, score);
+      if (updatedUser) setUser({ ...updatedUser });
+    }
+    }
 
   if (!user) {
     return <LoginScreen setUser={setUser} />;
@@ -136,17 +148,18 @@ function App() {
         }}
       />
 
-      <FishCatCanvas
-        gameState={gameState}
-        onStartGame={handleStartGame}
-        onResumeGame={() => setGameState("playing")}
-        difficulty={difficulty}
-        onChangeDifficulty={setDifficulty}
-        score={score}
-        onCatchFish={handleCatchFish}
-        setLives={setLives}
-        bonusPoints={apiChallenge.bonusPerFish}
-      />
+   <FishCatCanvas
+  gameState={gameState}
+  onStartGame={handleStartGame}
+  onResumeGame={() => setGameState("playing")}
+  difficulty={difficulty}
+  onChangeDifficulty={setDifficulty}
+  score={score}
+  onCatchFish={handleCatchFish}
+  onDeductPoints={handleDeductPoints}
+  setLives={setLives}
+  bonusPoints={apiChallenge.bonusPerFish}
+/>
 
       <LeaderboardModal
         isOpen={showLeaderboard}

@@ -7,8 +7,44 @@ const DIFFICULTY_SETTINGS = {
   hard: { baseSpeed: 5.2, speedRange: 2.4, spawnEvery: 27, label: "Hard" },
 };
 
-// Synthesized Web Audio sound effects (pitch scales up with combo!)
-function playFishSound(isGolden = false, combo = 1) {
+// Synthesized Web Audio "Meow!" sound when catching a big golden fish
+function playMeowSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+
+    osc.type = "triangle";
+    // Classic cat "me-OW-w" pitch contour
+    osc.frequency.setValueAtTime(520, now);
+    osc.frequency.exponentialRampToValueAtTime(860, now + 0.14);
+    osc.frequency.exponentialRampToValueAtTime(440, now + 0.42);
+
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(900, now);
+    filter.Q.setValueAtTime(2.5, now);
+
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.28, now + 0.08);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.45);
+  } catch {
+    // Ignore if browser blocks audio before interaction
+  }
+}
+
+// Synthesized Web Audio point chime for regular blue fish
+function playFishSound(combo = 1) {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioCtx();
@@ -20,10 +56,7 @@ function playFishSound(isGolden = false, combo = 1) {
 
     const comboBoost = Math.min(combo - 1, 6) * 45;
     osc.frequency.setValueAtTime(1046.5 + comboBoost, now);
-    osc.frequency.setValueAtTime(
-      (isGolden ? 1567.98 : 1318.5) + comboBoost,
-      now + 0.07
-    );
+    osc.frequency.setValueAtTime(1318.5 + comboBoost, now + 0.07);
 
     gain.gain.setValueAtTime(0.18, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
@@ -64,14 +97,20 @@ function playHazardSound() {
   }
 }
 
-// Crisp, bold vector Fish (Blue or Golden)
+// Crisp vector Fish (Big Golden Fish = +1 Life & Meow; Blue Fish = +Points)
 function drawFish(ctx, x, y, isGolden = false, wobble = 0) {
   ctx.save();
   ctx.translate(x + 22, y - 12);
-  ctx.rotate(Math.sin(wobble) * 0.14);
-  ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
-  ctx.shadowBlur = 6;
-  ctx.shadowOffsetY = 3;
+  if (isGolden) {
+    ctx.scale(1.4, 1.4); // Noticeably larger "Big Fish"
+    ctx.shadowColor = "rgba(250, 204, 21, 0.85)";
+    ctx.shadowBlur = 14;
+  } else {
+    ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetY = 3;
+  }
+  ctx.rotate(Math.sin(wobble) * 0.2);
 
   // Tail fin
   ctx.fillStyle = isGolden ? "#f59e0b" : "#0284c7";
@@ -99,6 +138,13 @@ function drawFish(ctx, x, y, isGolden = false, wobble = 0) {
   ctx.ellipse(3, 4, 12, 5, 0, 0, Math.PI);
   ctx.fill();
 
+  // Heart emblem on Big Golden Fish so players know it grants +1 Life
+  if (isGolden) {
+    ctx.fillStyle = "#ef4444";
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillText("♥", -4, 4);
+  }
+
   // Eye
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
@@ -112,11 +158,11 @@ function drawFish(ctx, x, y, isGolden = false, wobble = 0) {
   ctx.restore();
 }
 
-// Crisp, high-contrast vector Boot
-function drawBoot(ctx, x, y, spin = 0) {
+// Tumbling vector Boot
+function drawBoot(ctx, x, y, angle = 0) {
   ctx.save();
   ctx.translate(x + 20, y - 14);
-  ctx.rotate(-0.2 + Math.sin(spin) * 0.15);
+  ctx.rotate(angle);
   ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
   ctx.shadowBlur = 6;
   ctx.shadowOffsetY = 3;
@@ -143,11 +189,11 @@ function drawBoot(ctx, x, y, spin = 0) {
   ctx.restore();
 }
 
-// Crisp, outlined vector Fish Bone
-function drawFishBone(ctx, x, y, spin = 0) {
+// Spinning vector Fish Bone
+function drawFishBone(ctx, x, y, angle = 0) {
   ctx.save();
   ctx.translate(x + 20, y - 10);
-  ctx.rotate(-0.35 + Math.cos(spin) * 0.18);
+  ctx.rotate(angle);
   ctx.shadowColor = "rgba(0, 0, 0, 0.65)";
   ctx.shadowBlur = 5;
   ctx.shadowOffsetY = 2;
@@ -203,12 +249,23 @@ function drawFishBone(ctx, x, y, spin = 0) {
   ctx.restore();
 }
 
-// Full-Body Standing Orange Tabby Cat (inspired by your wide-mouth sticker!)
-function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isMoving }) {
+// Expressive Full-Body Cat with Feline Gait, Lean, Ear Twitch & Meow Jump
+function drawFullTabbyCat(
+  ctx,
+  x,
+  bottomY,
+  { isMouthOpen, isHurt, isMeowing, walkPhase, moveDir }
+) {
   ctx.save();
-  // Anchor at center-bottom of the cat's paws
-  const bounce = isMoving ? Math.abs(Math.sin(walkPhase)) * 4 : 0;
-  ctx.translate(x + 45, bottomY - bounce);
+  const isMoving = Math.abs(moveDir) > 0.1;
+
+  // Feline pounce hop when moving or celebrating a "Meow!" life-up
+  const runBounce = isMoving ? Math.abs(Math.sin(walkPhase)) * 7 : 0;
+  const meowJump = isMeowing ? 16 : 0;
+  ctx.translate(x + 45, bottomY - runBounce - meowJump);
+
+  // Subtle agile body tilt in the direction the cat is running
+  ctx.rotate(moveDir * 0.08);
 
   ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
   ctx.shadowBlur = 8;
@@ -219,46 +276,57 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
   const stripeColor = "#b45309";
   const outline = "#1c1917";
 
-  // 1. Swishing Tail (behind body)
-  const tailWag = Math.sin(walkPhase * 0.6) * 0.25;
+  // 1. Expressive S-curve Cat Tail
+  const tailSwing = isMoving
+    ? Math.sin(walkPhase * 1.2) * 0.45
+    : Math.sin(walkPhase * 0.4) * 0.25;
   ctx.save();
-  ctx.translate(22, -26);
-  ctx.rotate(tailWag);
+  ctx.translate(20, -26);
+  ctx.rotate(tailSwing);
   ctx.strokeStyle = outline;
   ctx.lineWidth = 13;
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.quadraticCurveTo(22, -16, 16, -38);
+  ctx.bezierCurveTo(22, -10, 8, -32, 24, -44);
   ctx.stroke();
 
   ctx.strokeStyle = furMain;
   ctx.lineWidth = 8;
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.quadraticCurveTo(22, -16, 16, -38);
+  ctx.bezierCurveTo(22, -10, 8, -32, 24, -44);
   ctx.stroke();
   ctx.restore();
 
-  // 2. Walking Hind & Front Legs
-  const leftStep = isMoving ? Math.sin(walkPhase) * 5 : 0;
-  const rightStep = isMoving ? -Math.sin(walkPhase) * 5 : 0;
+  // 2. Agile Paws & Striding Legs
+  const leftStride = isMoving ? Math.sin(walkPhase) * 8 : 0;
+  const rightStride = isMoving ? -Math.sin(walkPhase) * 8 : 0;
 
   ctx.lineWidth = 3;
   ctx.strokeStyle = outline;
 
-  // Left Leg
+  // Left Leg & Paw
+  ctx.save();
+  ctx.translate(-13, -24);
+  ctx.rotate(leftStride * 0.04);
   ctx.fillStyle = furMain;
   ctx.beginPath();
-  ctx.roundRect(-20, -24 + leftStep, 14, 24 - leftStep, 7);
+  ctx.roundRect(-7, 0, 14, 24, 7);
   ctx.fill();
   ctx.stroke();
+  ctx.restore();
 
-  // Right Leg
+  // Right Leg & Paw
+  ctx.save();
+  ctx.translate(13, -24);
+  ctx.rotate(rightStride * 0.04);
+  ctx.fillStyle = furMain;
   ctx.beginPath();
-  ctx.roundRect(6, -24 + rightStep, 14, 24 - rightStep, 7);
+  ctx.roundRect(-7, 0, 14, 24, 7);
   ctx.fill();
   ctx.stroke();
+  ctx.restore();
 
   // 3. Full Torso
   ctx.fillStyle = furMain;
@@ -283,29 +351,32 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
   ctx.roundRect(15, -43, 7, 4, 2);
   ctx.fill();
 
-  // 4. Cute Paws / Arms
-  const armRaise = isMouthOpen ? -8 : 0;
+  // 4. Front Paws (reach up excitedly when catching or meowing!)
+  const pawLift = isMeowing ? -16 : isMouthOpen ? -9 : -leftStride * 0.5;
   ctx.fillStyle = furMain;
   ctx.strokeStyle = outline;
   ctx.lineWidth = 3;
 
-  // Left Arm
+  // Left Front Paw
   ctx.beginPath();
-  ctx.roundRect(-31, -56 + armRaise, 12, 24, 6);
+  ctx.roundRect(-31, -56 + pawLift, 12, 24, 6);
   ctx.fill();
   ctx.stroke();
 
-  // Right Arm
+  // Right Front Paw
   ctx.beginPath();
-  ctx.roundRect(19, -56 + armRaise, 12, 24, 6);
+  ctx.roundRect(19, -56 - pawLift * 0.6, 12, 24, 6);
   ctx.fill();
   ctx.stroke();
 
-  // 5. Head & Ears
+  // 5. Head & Twitching Ears
   ctx.save();
   ctx.translate(0, -86);
+  const earTwitch = Math.sin(walkPhase * 0.7) * 0.06;
 
-  // Outer Ears
+  // Left Ear
+  ctx.save();
+  ctx.rotate(-earTwitch);
   ctx.fillStyle = furMain;
   ctx.beginPath();
   ctx.moveTo(-28, -12);
@@ -315,6 +386,19 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
   ctx.fill();
   ctx.stroke();
 
+  ctx.fillStyle = "#fda4af";
+  ctx.beginPath();
+  ctx.moveTo(-23, -15);
+  ctx.lineTo(-20, -32);
+  ctx.lineTo(-10, -22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Right Ear
+  ctx.save();
+  ctx.rotate(earTwitch);
+  ctx.fillStyle = furMain;
   ctx.beginPath();
   ctx.moveTo(28, -12);
   ctx.lineTo(22, -40);
@@ -323,21 +407,14 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
   ctx.fill();
   ctx.stroke();
 
-  // Inner Pink Ears
   ctx.fillStyle = "#fda4af";
-  ctx.beginPath();
-  ctx.moveTo(-23, -15);
-  ctx.lineTo(-20, -32);
-  ctx.lineTo(-10, -22);
-  ctx.closePath();
-  ctx.fill();
-
   ctx.beginPath();
   ctx.moveTo(23, -15);
   ctx.lineTo(20, -32);
   ctx.lineTo(10, -22);
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
 
   // Round Tabby Head
   ctx.fillStyle = furMain;
@@ -354,7 +431,7 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
   ctx.roundRect(6, -23, 4, 7, 2);
   ctx.fill();
 
-  // Eyes (Dizzy >< if hurt, Big wide cartoon eyes like your image otherwise!)
+  // Eyes (Happy ^ ^ when meowing, >< when hurt, wide cartoon eyes otherwise)
   if (isHurt) {
     ctx.strokeStyle = outline;
     ctx.lineWidth = 3;
@@ -366,8 +443,16 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
     ctx.lineTo(9, -6);
     ctx.lineTo(17, -2);
     ctx.stroke();
+  } else if (isMeowing) {
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.arc(-13, -6, 6, Math.PI, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(13, -6, 6, Math.PI, 0);
+    ctx.stroke();
   } else {
-    // Big cream/white cartoon eyeballs
     ctx.fillStyle = "#fef9c3";
     ctx.strokeStyle = outline;
     ctx.lineWidth = 2.5;
@@ -377,11 +462,10 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
     ctx.fill();
     ctx.stroke();
 
-    // Pupils
     ctx.fillStyle = outline;
     ctx.beginPath();
-    ctx.arc(-12, -7, 3.2, 0, Math.PI * 2);
-    ctx.arc(12, -7, 3.2, 0, Math.PI * 2);
+    ctx.arc(-12 + moveDir * 2, -7, 3.2, 0, Math.PI * 2);
+    ctx.arc(12 + moveDir * 2, -7, 3.2, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -394,8 +478,8 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
   ctx.fill();
   ctx.stroke();
 
-  // Mouth (Huge open cartoon mouth like your image when fish is near/caught!)
-  if (isMouthOpen) {
+  // Mouth
+  if (isMouthOpen || isMeowing) {
     ctx.fillStyle = "#7f1d1d";
     ctx.strokeStyle = outline;
     ctx.lineWidth = 2.5;
@@ -404,7 +488,6 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
     ctx.fill();
     ctx.stroke();
 
-    // Pink Tongue inside mouth
     ctx.fillStyle = "#fb7185";
     ctx.beginPath();
     ctx.ellipse(0, 18, 10, 5, 0, 0, Math.PI * 2);
@@ -420,22 +503,35 @@ function drawFullTabbyCat(ctx, x, bottomY, { isMouthOpen, isHurt, walkPhase, isM
     ctx.stroke();
   }
 
-  // Wavy Black Whiskers (matching your sticker!)
+  // Wavy Black Whiskers
   ctx.strokeStyle = outline;
   ctx.lineWidth = 2.5;
   ctx.lineCap = "round";
   ctx.beginPath();
-  // Left whiskers
   ctx.moveTo(-24, 1);
   ctx.quadraticCurveTo(-32, -3, -40, 1);
   ctx.moveTo(-24, 7);
   ctx.quadraticCurveTo(-32, 11, -40, 7);
-  // Right whiskers
   ctx.moveTo(24, 1);
   ctx.quadraticCurveTo(32, -3, 40, 1);
   ctx.moveTo(24, 7);
   ctx.quadraticCurveTo(32, 11, 40, 7);
   ctx.stroke();
+
+  // Speech Bubble "Meow! ❤️" when catching a big fish
+  if (isMeowing) {
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(26, -54, 96, 30, 14);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#e11d48";
+    ctx.font = "bold 15px sans-serif";
+    ctx.fillText("Meow! +1 ❤️", 34, -34);
+  }
 
   ctx.restore();
   ctx.restore();
@@ -449,6 +545,7 @@ export default function FishCatCanvas({
   onChangeDifficulty,
   score,
   onCatchFish,
+  onDeductPoints = () => {},
   setLives,
   bonusPoints = 0,
 }) {
@@ -457,13 +554,14 @@ export default function FishCatCanvas({
   const prevCatXRef = useRef(355);
   const keysRef = useRef({ left: false, right: false });
 
-  // Persistent refs for Stop/Continue & dynamic effects
+  // Persistent refs for Stop/Continue & dynamic physics
   const itemsRef = useRef([]);
   const popupsRef = useRef([]);
   const particlesRef = useRef([]);
   const frameCountRef = useRef(0);
   const mouthOpenTimerRef = useRef(0);
   const hurtTimerRef = useRef(0);
+  const meowTimerRef = useRef(0);
   const shakeTimerRef = useRef(0);
   const comboRef = useRef(0);
   const caughtInRoundRef = useRef(0);
@@ -477,6 +575,7 @@ export default function FishCatCanvas({
       frameCountRef.current = 0;
       mouthOpenTimerRef.current = 0;
       hurtTimerRef.current = 0;
+      meowTimerRef.current = 0;
       shakeTimerRef.current = 0;
       comboRef.current = 0;
       caughtInRoundRef.current = 0;
@@ -541,7 +640,6 @@ export default function FishCatCanvas({
       frameCountRef.current++;
       ctx.save();
 
-      // Screen shake on hazard impact
       if (shakeTimerRef.current > 0) {
         shakeTimerRef.current--;
         const shakeX = (Math.random() - 0.5) * 10;
@@ -557,7 +655,8 @@ export default function FishCatCanvas({
       if (keysRef.current.right) catXRef.current += moveSpeed;
       catXRef.current = Math.max(0, Math.min(canvas.width - 90, catXRef.current));
 
-      const isMoving = Math.abs(catXRef.current - prevCatXRef.current) > 0.5;
+      const deltaX = catXRef.current - prevCatXRef.current;
+      const moveDir = Math.max(-1, Math.min(1, deltaX / 4));
       prevCatXRef.current = catXRef.current;
 
       // Dynamic speed ramp as you catch more fish
@@ -567,44 +666,54 @@ export default function FishCatCanvas({
         settings.spawnEvery - Math.floor(caughtInRoundRef.current / 4)
       );
 
-      // Spawn fish, golden fish, boots, or fish bones
+      // Spawn objects with dynamic falling motion parameters
       if (frameCountRef.current % dynamicSpawn === 0) {
         const rand = Math.random();
         let type = "fish";
-        if (rand < 0.16) type = "boot";
-        else if (rand < 0.32) type = "bone";
-        else if (rand > 0.84) type = "golden";
+        if (rand < 0.17) type = "boot";
+        else if (rand < 0.34) type = "bone";
+        else if (rand > 0.82) type = "golden";
 
         itemsRef.current.push({
-          x: Math.random() * (canvas.width - 50),
+          x: 40 + Math.random() * (canvas.width - 100),
           y: -30,
           speed:
-            (type === "golden" ? settings.baseSpeed + 1.2 : settings.baseSpeed) +
+            (type === "golden" ? settings.baseSpeed + 1.1 : settings.baseSpeed) +
             speedRamp +
             Math.random() * settings.speedRange,
+          // Dynamic swaying & spinning properties
+          swayAmplitude: type === "fish" ? 1.8 : type === "golden" ? 2.6 : 0.7,
+          swaySpeed: 0.05 + Math.random() * 0.05,
+          angle: Math.random() * Math.PI * 2,
+          spinSpeed:
+            type === "boot" || type === "bone"
+              ? (Math.random() > 0.5 ? 1 : -1) * (0.04 + Math.random() * 0.05)
+              : 0.1,
           type,
-          phase: Math.random() * Math.PI * 2,
         });
       }
 
       let fishNearby = false;
 
-      // Update & draw falling items
+      // Update & draw dynamically falling items
       itemsRef.current = itemsRef.current.filter((item) => {
         item.y += item.speed;
-        item.phase += 0.12;
+        item.angle += item.spinSpeed;
+        // Horizontal swimming wave / wind drift
+        item.x += Math.sin(item.y * item.swaySpeed) * item.swayAmplitude;
+        item.x = Math.max(10, Math.min(canvas.width - 55, item.x));
 
         if (item.type === "bone") {
-          drawFishBone(ctx, item.x, item.y, item.phase);
+          drawFishBone(ctx, item.x, item.y, item.angle);
         } else if (item.type === "boot") {
-          drawBoot(ctx, item.x, item.y, item.phase);
+          drawBoot(ctx, item.x, item.y, item.angle);
         } else {
-          drawFish(ctx, item.x, item.y, item.type === "golden", item.phase);
+          drawFish(ctx, item.x, item.y, item.type === "golden", item.angle);
         }
 
         const isHazard = item.type === "boot" || item.type === "bone";
 
-        // Open cat's big mouth when tasty fish drops nearby
+        // Open cat mouth when any fish drops close
         if (
           !isHazard &&
           item.y > canvas.height - 210 &&
@@ -614,7 +723,7 @@ export default function FishCatCanvas({
           fishNearby = true;
         }
 
-        // Hitbox covers full standing cat body & head
+        // Collision check with standing cat
         const hitCat =
           item.y > canvas.height - 115 &&
           item.y < canvas.height - 12 &&
@@ -623,11 +732,13 @@ export default function FishCatCanvas({
 
         if (hitCat) {
           if (isHazard) {
+            // Boots & Bones: deduct 1 ❤️ life!
             playHazardSound();
             comboRef.current = 0;
-            hurtTimerRef.current = 25;
+            hurtTimerRef.current = 24;
             shakeTimerRef.current = 12;
             setLives((prev) => prev - 1);
+
             spawnParticles(catXRef.current + 45, canvas.height - 75, [
               "#ef4444",
               "#fca5a5",
@@ -636,33 +747,52 @@ export default function FishCatCanvas({
             popupsRef.current.push({
               x: catXRef.current + 12,
               y: canvas.height - 125,
-              text: item.type === "bone" ? "Yuck! -1 ❤️" : "Ouch! -1 ❤️",
+              text: item.type === "bone" ? "Bone! -1 ❤️" : "Boot! -1 ❤️",
               color: "#f87171",
               life: 34,
             });
-          } else {
+          } else if (item.type === "golden") {
+            // Big Golden Fish: grants +1 extra life and says "Meow!" (no points)
+            playMeowSound();
             comboRef.current += 1;
             caughtInRoundRef.current += 1;
-            playFishSound(item.type === "golden", comboRef.current);
+            meowTimerRef.current = 45;
+            mouthOpenTimerRef.current = 18;
+            setLives((prev) => Math.min(5, prev + 1));
+
+            spawnParticles(catXRef.current + 45, canvas.height - 95, [
+              "#facc15",
+              "#fb7185",
+              "#fef08a",
+              "#ffffff",
+            ]);
+            popupsRef.current.push({
+              x: catXRef.current + 10,
+              y: canvas.height - 135,
+              text: "+1 ❤️ Life!",
+              color: "#fb7185",
+              life: 38,
+            });
+          } else {
+            // Regular Blue Fish: grants +points only
+            comboRef.current += 1;
+            caughtInRoundRef.current += 1;
+            playFishSound(comboRef.current);
 
             const comboMultiplier =
               comboRef.current >= 5 ? 2 : comboRef.current >= 3 ? 1.5 : 1;
             const hardBonus = difficulty === "hard" ? 5 : 0;
-            const basePts =
-              (item.type === "golden" ? 25 : 10) + bonusPoints + hardBonus;
+            const basePts = 10 + bonusPoints + hardBonus;
             const pts = Math.round(basePts * comboMultiplier);
 
             onCatchFish(pts);
             mouthOpenTimerRef.current = 16;
 
-            spawnParticles(
-              catXRef.current + 45,
-              canvas.height - 85,
-              item.type === "golden"
-                ? ["#facc15", "#fef08a", "#ffffff"]
-                : ["#38bdf8", "#bae6fd", "#fef08a"]
-            );
-
+            spawnParticles(catXRef.current + 45, canvas.height - 85, [
+              "#38bdf8",
+              "#bae6fd",
+              "#fef08a",
+            ]);
             popupsRef.current.push({
               x: catXRef.current + 18,
               y: canvas.height - 125,
@@ -670,7 +800,7 @@ export default function FishCatCanvas({
                 comboRef.current >= 3
                   ? `+${pts}! (${comboRef.current}x)`
                   : `+${pts}!`,
-              color: item.type === "golden" ? "#facc15" : "#fef08a",
+              color: "#fef08a",
               life: 32,
             });
           }
@@ -682,13 +812,15 @@ export default function FishCatCanvas({
 
       if (mouthOpenTimerRef.current > 0) mouthOpenTimerRef.current--;
       if (hurtTimerRef.current > 0) hurtTimerRef.current--;
+      if (meowTimerRef.current > 0) meowTimerRef.current--;
 
-      // Draw full-body standing tabby cat
+      // Draw expressive full-body cat
       drawFullTabbyCat(ctx, catXRef.current, canvas.height - 10, {
         isMouthOpen: fishNearby || mouthOpenTimerRef.current > 0,
         isHurt: hurtTimerRef.current > 0,
-        walkPhase: frameCountRef.current * 0.25,
-        isMoving,
+        isMeowing: meowTimerRef.current > 0,
+        walkPhase: frameCountRef.current * 0.32,
+        moveDir,
       });
 
       // Draw burst particles
@@ -704,11 +836,11 @@ export default function FishCatCanvas({
         return pt.life > 0;
       });
 
-      // Floating score feedback popups
+      // Floating feedback popups
       popupsRef.current = popupsRef.current.filter((p) => {
         p.y -= 1.3;
         p.life--;
-        ctx.font = "bold 22px sans-serif";
+        ctx.font = "bold 21px sans-serif";
         ctx.strokeStyle = "#0f172a";
         ctx.lineWidth = 4;
         ctx.strokeText(p.text, p.x, p.y);
@@ -717,7 +849,7 @@ export default function FishCatCanvas({
         return p.life > 0;
       });
 
-      // Live Combo Badge in top-right corner of the game board
+      // Live Combo Badge
       if (comboRef.current >= 2) {
         ctx.font = "bold 18px sans-serif";
         ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
@@ -735,7 +867,7 @@ export default function FishCatCanvas({
 
     animationId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animationId);
-  }, [gameState, difficulty, bonusPoints, onCatchFish, setLives]);
+  }, [gameState, difficulty, bonusPoints, onCatchFish, onDeductPoints, setLives]);
 
   // Responsive touch/mouse drag support
   function handlePointerMove(e) {
@@ -774,11 +906,10 @@ export default function FishCatCanvas({
             {gameState === "paused"
               ? "Take a breather! Click Continue when you are ready."
               : gameState === "start"
-              ? "Catch fresh fish to build combos and dodge old boots & fish bones!"
+              ? "Blue fish = +Points | Big Golden Fish = Meow! +1 ❤️ | Boots & Bones = -10 pts"
               : `Final Score: ${score}`}
           </p>
 
-          {/* Difficulty Selector */}
           <div className="level-selector">
             <span>Level:</span>
             {["easy", "medium", "hard"].map((lvl) => (
