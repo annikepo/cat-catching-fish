@@ -1,7 +1,7 @@
 import { useState } from "react";
 import LoginScreen from "./components/LoginScreen";
 import { getCurrentUser, logOut } from "./Utils/localStorageAuth";
-import "./App.css";
+//import "./App.css";
 
 function App() {
 
