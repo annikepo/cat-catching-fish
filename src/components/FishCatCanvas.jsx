@@ -37,7 +37,7 @@ const addFish = (game) => {
 
 /* Move every fish down one step and check if the cat caught it */
 const moveFish = (game) => {
-    let score = game.score;
+    let { score } = game;
     const fishLeft = [];
     const speed = 0.6;
 
@@ -49,7 +49,7 @@ const moveFish = (game) => {
         const isAtCatchLine = fish.y < CATCH_LINE && newY >= CATCH_LINE;
 
         if (isAboveCat && isAtCatchLine) {
-            score = score + 1;
+            score += 1;
         } else if (newY <= 100) {
             // Still falling
             fishLeft.push({ ...fish, y: newY });
