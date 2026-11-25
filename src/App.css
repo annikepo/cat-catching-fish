@@ -89,6 +89,16 @@ button:hover {
   border-radius: 0 0 50% 50% / 0 0 100% 100%;
 }
 
+/* Fish: blue circles */
+.fish {
+  position: absolute;
+  width: 4%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  background: #3b82c4;
+  border-radius: 50%;
+}
+
 .controls-hint {
   margin-top: 8px;
   font-size: 14px;
