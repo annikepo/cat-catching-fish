@@ -1,3 +1,21 @@
+.login__card {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.login__form {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.login__title {
+    font-family: var(--font-main);
+    color: var(--secondary-color);
+    font-size: 50px;
+}
+
 .login__button {
     appearance: none;
     background: none;
@@ -7,6 +25,12 @@
     font: inherit;
     color: inherit;
     cursor: pointer;
-    background-color: orange;
+    background-color: var(--main-color);
     border-radius: 10px;
+    font-family: var(--font-main);
+    color: var(--secondary-color);
+}
+
+.login__input {
+    font-family: var(--font-main);
 }
