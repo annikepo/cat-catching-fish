@@ -4,6 +4,12 @@
     flex-direction: column;
 }
 
+.login__header{
+    width: 100%;
+    text-align: center;
+    background-color: var(--secondary-bg-color);
+}
+
 .login__form {
     display: flex;
     align-items: center;
@@ -16,21 +22,27 @@
     font-size: 50px;
 }
 
-.login__button {
-    appearance: none;
-    background: none;
-    border: none;
+.login__input {
+    font-family: var(--font-main);
+    border: 2px solid;
+    border-radius: 10px;
     padding: 10px;
+    margin: 5px;
+}
+
+.login__prompt {
+    font-family: var(--font-main);
+}
+
+.login__button {
+    padding: 10px 20px;
     margin: 10px;
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
+    min-width: 120x;
+    min-height:45px;
+    max-width: 100%;
     background-color: var(--main-color);
     border-radius: 10px;
     font-family: var(--font-main);
     color: var(--secondary-color);
 }
 
-.login__input {
-    font-family: var(--font-main);
-}

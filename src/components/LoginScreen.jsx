@@ -41,7 +41,9 @@ function LoginScreen({ setUser }) {
     return (
         <div className="login">
             <div className="login__card">
-                <h2 className="login__title">{isLogin ? "Login" : "Sign Up"}</h2>
+                <header className="login__header">
+                    <h2 className="login__title">{isLogin ? "Login" : "Sign Up"}</h2>
+                </header>
 
                 <form onSubmit={handleSubmit} className="login__form">
                     <input
@@ -81,15 +83,24 @@ function LoginScreen({ setUser }) {
                     </button>
                 </form>
 
+                <p className="login__prompt">
+                    {isLogin ? "Don't have an account?" : "Already have an account?"}
+                </p>
+
                 <button
                     type="button"
                     className="login__button login__button--toggle"
                     onClick={() => setIsLogin((current) => !current)}
                 >
                     {isLogin
-                        ? "Don't have an account? Sign up"
-                        : "Already have an account? Login"}
+                        ? "Sign up"
+                        : "Login"}
                 </button>
+
+
+
+                {/*? "Don't have an account? Sign up"
+                    : "Already have an account? Login"} */}
             </div>
         </div>
     );

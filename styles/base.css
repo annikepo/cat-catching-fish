@@ -1,0 +1,33 @@
+/*
+   I added this because of advice from Claude.
+   The [box-sizing:border-box;] includes padding and border in an 
+   element's width/height, so width: 100% never overflows its container. 
+   Applies to all elements and their ::before/::after pseudo-elements. 
+   Otherwise padding and border values are added on top.
+*/
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+button {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: inherit;
+    cursor: pointer;
+}
+
+input {
+    appearance: none;
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    border-radius: 0;
+}
