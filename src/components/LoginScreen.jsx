@@ -1,6 +1,7 @@
 /* Authentication component */
 import { useState } from "react";
 import { logIn, signUp } from "../Utils/localStorageAuth";
+import "../../styles/login.css"
 
 function LoginScreen({ setUser }) {
     /* Form state */
@@ -38,12 +39,13 @@ function LoginScreen({ setUser }) {
     };
 
     return (
-        <div className="auth-container">
-            <div className="auth-card">
-                <h2>{isLogin ? "Login" : "Sign Up"}</h2>
+        <div className="login">
+            <div className="login__card">
+                <h2 className="login__title">{isLogin ? "Login" : "Sign Up"}</h2>
 
-                <form onSubmit={handleSubmit} className="form">
+                <form onSubmit={handleSubmit} className="login__form">
                     <input
+                        className="login__input"
                         type="text"
                         id="username"
                         name="username"
@@ -53,6 +55,7 @@ function LoginScreen({ setUser }) {
                     />
 
                     <input
+                        className="login__input"
                         type="password"
                         id="password"
                         name="password"
@@ -63,6 +66,7 @@ function LoginScreen({ setUser }) {
 
                     {!isLogin && (
                         <input
+                            className="login__input"
                             type="email"
                             id="email"
                             name="email"
@@ -72,14 +76,14 @@ function LoginScreen({ setUser }) {
                         />
                     )}
 
-                    <button type="submit">
+                    <button className="login__button" type="submit">
                         {isLogin ? "Login" : "Sign Up"}
                     </button>
                 </form>
 
                 <button
                     type="button"
-                    className="toggle-auth"
+                    className="login__button login__button--toggle"
                     onClick={() => setIsLogin((current) => !current)}
                 >
                     {isLogin
