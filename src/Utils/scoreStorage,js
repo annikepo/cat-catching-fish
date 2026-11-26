@@ -1,0 +1,29 @@
+/* Local storage score helpers */
+
+const SCORES_KEY = "scores";
+
+/* Get everyone's best scores */
+export const getScores = () => {
+    return JSON.parse(localStorage.getItem(SCORES_KEY)) || {};
+};
+
+/* Get one player's best score */
+export const getBestScore = (username) => {
+    const scores = getScores();
+    return scores[username] || 0;
+};
+
+/* Save a finished game (returns true if it is a new best) */
+export const saveScore = (username, score) => {
+    const scores = getScores();
+    const oldBest = scores[username] || 0;
+
+    // Only save if the new score is better
+    if (score > oldBest) {
+        scores[username] = score;
+        localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+        return true;
+    }
+
+    return false;
+};
