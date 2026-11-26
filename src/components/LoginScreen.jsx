@@ -45,62 +45,64 @@ function LoginScreen({ setUser }) {
                     <h2 className="login__title">{isLogin ? "Login" : "Sign Up"}</h2>
                 </header>
 
-                <form onSubmit={handleSubmit} className="login__form">
-                    <input
-                        className="login__input"
-                        type="text"
-                        id="username"
-                        name="username"
-                        placeholder="Enter username"
-                        value={username}
-                        onChange={(event) => setUsername(event.target.value)}
-                    />
+                <main className="login__body">
 
-                    <input
-                        className="login__input"
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Enter password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                    />
-
-                    {!isLogin && (
+                    <form onSubmit={handleSubmit} className="login__form">
                         <input
                             className="login__input"
-                            type="email"
-                            id="email"
-                            name="email"
-                            placeholder="Enter your email"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
+                            type="text"
+                            id="username"
+                            name="username"
+                            placeholder="Enter username"
+                            value={username}
+                            onChange={(event) => setUsername(event.target.value)}
                         />
-                    )}
 
-                    <button className="login__button" type="submit">
-                        {isLogin ? "Login" : "Sign Up"}
-                    </button>
-                </form>
+                        <input
+                            className="login__input"
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Enter password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                        />
 
-                <p className="login__prompt">
-                    {isLogin ? "Don't have an account?" : "Already have an account?"}
-                </p>
+                        {!isLogin && (
+                            <input
+                                className="login__input"
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="Enter your email"
+                                value={email}
+                                onChange={(event) => setEmail(event.target.value)}
+                            />
+                        )}
 
-                <button
-                    type="button"
-                    className="login__button login__button--toggle"
-                    onClick={() => setIsLogin((current) => !current)}
-                >
-                    {isLogin
-                        ? "Sign up"
-                        : "Login"}
-                </button>
+                        <button className="login__button" type="submit">
+                            {isLogin ? "Login" : "Sign Up"}
+                        </button>
+                    </form>
 
+                    <section className="login__altpage">
+                        <p className="login__prompt">
+                            {isLogin ? "Don't have an account?" : "Already have an account?"}
+                        </p>
 
+                        <button
+                            type="button"
+                            className="login__button login__button--toggle"
+                            onClick={() => setIsLogin((current) => !current)}
+                        >
+                            {isLogin
+                                ? "Sign up"
+                                : "Login"}
+                        </button>
+                    </section>
 
-                {/*? "Don't have an account? Sign up"
-                    : "Already have an account? Login"} */}
+                </main>
+
             </div>
         </div>
     );

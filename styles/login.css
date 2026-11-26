@@ -1,6 +1,12 @@
-.login__card {
+.login {
+    min-height: 100vh;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+}
+
+.login__card {
+    flex: 1;
+    display: flex;
     flex-direction: column;
 }
 
@@ -8,6 +14,14 @@
     width: 100%;
     text-align: center;
     background-color: var(--secondary-bg-color);
+}
+
+.login__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-color);
+
 }
 
 .login__form {
@@ -24,14 +38,22 @@
 
 .login__input {
     font-family: var(--font-main);
-    border: 2px solid;
+    background-color: blanchedalmond;
+    border: 3px solid var(--main-color);
     border-radius: 10px;
     padding: 10px;
     margin: 5px;
+    color: var(--secondary-color);
+}
+
+.login__input::placeholder{
+    color: var(--secondary-color);
 }
 
 .login__prompt {
     font-family: var(--font-main);
+    color: var(--secondary-color);
+    text-align: center;
 }
 
 .login__button {
@@ -46,3 +68,8 @@
     color: var(--secondary-color);
 }
 
+.login__altpage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
