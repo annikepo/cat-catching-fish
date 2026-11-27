@@ -42,10 +42,12 @@ function LoginScreen({ setUser }) {
         <div className="login">
             <div className="login__card">
                 <header className="login__header">
-                    <h2 className="login__title">{isLogin ? "Login" : "Sign Up"}</h2>
+                    <h2 className="login__title">{isLogin ? "Log in" : "Sign Up"}</h2>
                 </header>
 
                 <main className="login__body">
+
+                    {/* add logo or game name */}
 
                     <form onSubmit={handleSubmit} className="login__form">
                         <input
@@ -97,7 +99,7 @@ function LoginScreen({ setUser }) {
                         >
                             {isLogin
                                 ? "Sign up"
-                                : "Login"}
+                                : "Log in"}
                         </button>
                     </section>
 
