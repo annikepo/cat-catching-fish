@@ -60,7 +60,7 @@
 .login__button {
     padding: 10px 20px;
     margin: 10px;
-    min-width: 120x;
+    min-width: 120px;
     min-height:45px;
     max-width: 100%;
     background-color: var(--main-color);
