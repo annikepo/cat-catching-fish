@@ -28,6 +28,7 @@
     display: flex;
     align-items: center;
     flex-direction: column;
+    margin-top: auto;
 }
 
 .login__title {
@@ -42,7 +43,7 @@
     border: 3px solid var(--main-color);
     border-radius: 10px;
     padding: 10px;
-    margin: 5px;
+    margin: 20px;
     color: var(--secondary-color);
 }
 
@@ -72,4 +73,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: auto;
+    margin-bottom: 50px;
 }
